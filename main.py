@@ -16,12 +16,12 @@ def main() -> None:
     debug_mode = args.debug
 
     settings = Settings()
-    screen = initialize_pygame(settings.WIDTH, settings.HEIGHT, settings.UI_FONT, settings.UI_FONT_SIZE)
+    screen, font = initialize_pygame(settings.WIDTH, settings.HEIGHT, settings.UI_FONT, settings.UI_FONT_SIZE)
 
     mouse = Mouse(settings.MOUSE_SPRITE)
     debugger = Debugger(settings.DEBUG_POS, settings.DEBUG_FONT, settings.DEBUG_FONT_SIZE)
 
-    game_controller = GameController(screen, settings.FPS, mouse, debugger, debug_mode)
+    game_controller = GameController(screen, settings.FPS, mouse, font, debugger, debug_mode)
     game_controller.run_game()
 
 
@@ -31,19 +31,19 @@ def parse_command_line_arguments() -> Namespace:
     return parser.parse_args()
 
 
-def initialize_pygame(width: int, height: int, font: str, font_size: int) -> pg.Surface:
+def initialize_pygame(width: int, height: int, font_path: str, font_size: int) -> tuple[pg.Surface, pg.freetype.Font]:
     pg.init()
     freetype.init()
 
     pg.display.set_caption("Tic Tac Toe")
     screen = pg.display.set_mode((width, height))
 
-    pg.freetype.Font(font, font_size)
+    font = pg.freetype.Font(font_path, font_size)
 
     pg.event.set_grab(False)
     pg.mouse.set_visible(False)
 
-    return screen
+    return screen, font
 
 
 if __name__ == "__main__":
