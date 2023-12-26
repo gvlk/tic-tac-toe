@@ -44,6 +44,7 @@ python main.py
 ## Screenshots
 
 ![Screenshot 1](screenshots/screenshot1.png)
+![Screen recording 1](screenshots/screenrecording1.gif)
 
 ## Contributing
 
