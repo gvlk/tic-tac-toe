@@ -1,15 +1,43 @@
 import pygame as pg
+import pygame.freetype
 from src.modules.mouse import Mouse
 from src.modules.debugger import Debugger
 
+from typing import Optional
+
 
 class GameController:
+    EMPTY_CELL = "0"
+    TIE_CONDITION = "3"
+    P1_MARK = "1"
+    P2_MARK = "2"
+    P1_WIN_CONDITIONS = {
+        "111000000",
+        "000111000",
+        "000000111",
+        "100100100",
+        "010010010",
+        "001001001",
+        "100010001",
+        "001010100"
+    }
+    P2_WIN_CONDITIONS = set((condition.replace("1", "2") for condition in P1_WIN_CONDITIONS))
 
-    def __init__(self, screen: pg.Surface, fps: int, mouse: Mouse, debugger: Debugger, debug_mode: bool) -> None:
+    def __init__(
+            self,
+            screen: pg.Surface,
+            fps: int,
+            mouse: Mouse,
+            font: pg.freetype.Font,
+            debugger: Debugger,
+            debug_mode: bool
+    ) -> None:
+
         self.screen = screen
         self.mouse = mouse
         # noinspection PyTypeChecker
         self.mouse_group = pg.sprite.GroupSingle(self.mouse)
+        self.font = font
 
         self.clock = pg.time.Clock()
         self.fps = fps
@@ -31,8 +59,14 @@ class GameController:
         self.x_rect = self.x_surf.get_rect()
         self.o_rect = self.o_surf.get_rect()
 
-        self.turn_player = "1"
-        self.game_state = "000000000"
+        self.p1_win_conditions = self.P1_WIN_CONDITIONS.copy()
+        self.p2_win_conditions = self.P2_WIN_CONDITIONS.copy()
+        self.impossible_conditions = set()
+        self.turn = 1
+        self.turn_player = self.P1_MARK
+        self.game_state = self.EMPTY_CELL * 9
+        self.finished = False
+        self.winner = self.EMPTY_CELL
 
         self.run = True
 
@@ -54,13 +88,14 @@ class GameController:
             elif event.type == pg.KEYDOWN:
                 if event.key == pg.K_ESCAPE:
                     self.run = False
+                elif event.key == pg.K_r:
+                    self.reset_game()
 
             elif event.type == pg.MOUSEMOTION:
                 self.handle_mouse_motion()
 
             elif event.type == pg.MOUSEBUTTONDOWN:
-                mouse_buttons = pg.mouse.get_pressed(3)
-                if mouse_buttons[0]:
+                if pg.mouse.get_pressed(3)[0]:
                     self.handle_mouse_press()
 
     def handle_mouse_motion(self) -> None:
@@ -68,10 +103,24 @@ class GameController:
         self.mouse_group.update()
 
     def handle_mouse_press(self) -> None:
+        if not self.finished:
+            clicked_cell = self.get_clicked_cell()
+            if clicked_cell is not None:
+                self.turn += 1
+                self.game_state = self.game_state[:clicked_cell] + self.turn_player + self.game_state[clicked_cell+1:]
+                self.switch_turn()
+                self.winner = self.check_win()
+                if self.winner != self.EMPTY_CELL:
+                    self.finished = True
+
+    def get_clicked_cell(self) -> Optional[int]:
         for i, grid_rect in enumerate(self.grid_rects):
-            if grid_rect.collidepoint(self.mouse.pos[0], self.mouse.pos[1]) and self.game_state[i] == "0":
-                self.game_state = self.game_state[:i] + self.turn_player + self.game_state[i + 1:]
-                self.turn_player = "2" if self.turn_player == "1" else "1"
+            if grid_rect.collidepoint(self.mouse.pos[0], self.mouse.pos[1]) and self.game_state[i] == self.EMPTY_CELL:
+                return i
+        return None
+
+    def switch_turn(self) -> None:
+        self.turn_player = self.P2_MARK if self.turn_player == self.P1_MARK else self.P1_MARK
 
     def update_game_state(self) -> None:
         pg.display.update()
@@ -82,10 +131,15 @@ class GameController:
         for grid_rect in self.grid_rects:
             pg.draw.rect(self.screen, pg.Color("green"), grid_rect)
         for i, grid_pos in enumerate(self.game_state):
-            if grid_pos == "1":
+            if grid_pos == self.P1_MARK:
                 self.screen.blit(self.x_surf, self.grid_rects[i])
-            elif grid_pos == "2":
+            elif grid_pos == self.P2_MARK:
                 self.screen.blit(self.o_surf, self.grid_rects[i])
+
+        if self.finished:
+            self.draw_winner_message()
+        else:
+            self.draw_turn_message()
 
         self.mouse_group.draw(self.screen)
 
@@ -95,7 +149,12 @@ class GameController:
             f"FPS: {int(self.clock.get_fps())}",
             f"MOUSE: {self.mouse}",
             f"GAME_STATE: {self.game_state}",
-            f"TURN_PLAYER: {self.turn_player}"
+            f"TURN: {self.turn}",
+            f"TURN_PLAYER: {self.turn_player}",
+            f"P1_WIN_CONDITIONS: {self.p1_win_conditions}",
+            f"P2_WIN_CONDITIONS: {self.p2_win_conditions}",
+            f"IMPOSSIBLE_CONDITIONS: {self.impossible_conditions}",
+            f"SELF.WINNER: {self.winner}"
         )
 
     def generate_grid_rects(self) -> list[pg.Rect]:
@@ -119,3 +178,61 @@ class GameController:
                 rects.append(pg.Rect(x, y, square_size, square_size))
 
         return rects
+
+    def check_win(self) -> str:
+        """
+        Check if the current game state results in a win for player 1, player 2, or if it's a tie.
+        :return: str: "1" if player 1 wins, "2" if player 2 wins, "3" for a tie, "0" if the game continues.
+        """
+
+        def check_player_win(win_conditions: set, p1_mark: str, p2_mark: str) -> bool:
+            for condition in win_conditions:
+                p_win = True
+                for i, cell in enumerate(self.game_state):
+                    if condition[i] == p1_mark:
+                        if cell == p2_mark:
+                            p_win = False
+                            self.impossible_conditions.add(condition)
+                            break
+                        elif cell == self.EMPTY_CELL:
+                            p_win = False
+                if p_win:
+                    return True
+            win_conditions -= self.impossible_conditions
+            return False
+
+        if check_player_win(self.p1_win_conditions, self.P1_MARK, self.P2_MARK):
+            return self.P1_MARK
+        elif check_player_win(self.p2_win_conditions, self.P2_MARK, self.P1_MARK):
+            return self.P2_MARK
+        elif self.turn == 10:
+            return self.TIE_CONDITION
+        return self.EMPTY_CELL
+
+    def reset_game(self):
+        self.p1_win_conditions = self.P1_WIN_CONDITIONS.copy()
+        self.p2_win_conditions = self.P2_WIN_CONDITIONS.copy()
+        self.impossible_conditions = set()
+        self.turn = 1
+        self.turn_player = self.P1_MARK
+        self.game_state = self.EMPTY_CELL * 9
+        self.finished = False
+        self.winner = self.EMPTY_CELL
+
+    def draw_turn_message(self) -> None:
+        turn_text = self.font.render(f"Player {self.turn_player}'s Turn", pg.Color("black"), size=24)[0]
+        turn_rect = turn_text.get_rect(midbottom=(self.screen.get_width() // 2, 180))
+        self.screen.blit(turn_text, turn_rect)
+
+    def draw_winner_message(self) -> None:
+        if self.winner in (self.P1_MARK, self.P2_MARK):
+            text, text_rect = self.font.render(f"Player {self.winner} wins!", pg.Color("black"))
+        else:
+            text, text_rect = self.font.render("It's a tie!", pg.Color("black"))
+
+        text_rect.center = (self.screen.get_width() // 2, self.screen.get_height() // 2)
+        self.screen.blit(text, text_rect)
+
+        reset_text, reset_rect = self.font.render("Press 'r' to reset", pg.Color("black"))
+        reset_rect.center = (self.screen.get_width() // 2, text_rect.bottom + 20)
+        self.screen.blit(reset_text, reset_rect)
