@@ -2,6 +2,11 @@
 
 A simple Tic Tac Toe game implemented using Pygame.
 
+<p style="text-align: center;">
+    <img src="screenshots/screenrecording1.gif" alt="Screen recording 1" width="200"/>
+    <img src="screenshots/screenshot1.png" alt="Screenshot 1" width="200"/>
+</p>
+
 ## Introduction
 
 This project is a basic implementation of the classic Tic Tac Toe game using the Pygame library. It includes features like mouse control, a debug mode, and a simple graphical user interface.
@@ -37,14 +42,8 @@ Run the game using the following command:
 python main.py
 ```
 
-### Command Line Options
-
--d or --debug: Activate debug mode
-
-## Screenshots
-
-<img src="screenshots/screenshot1.png" alt="Screenshot 1" width="200"/>
-<img src="screenshots/screenrecording1.gif" alt="Screen recording 1" width="200"/>
+### Debug Mode
+You can activate debug mode during gameplay by pressing the "d" key on your keyboard  or by using the `-d`/`--debug` parameter. This will provide additional information and insights for debugging purposes.
 
 ## Contributing
 
