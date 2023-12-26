@@ -17,12 +17,12 @@ This project is a basic implementation of the classic Tic Tac Toe game using the
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/gvlk/tic-tac-toe-pygame.git
+git clone https://github.com/gvlk/tic-tac-toe.git
 ```
 
 2. Navigate to the project directory:
 ```bash
-cd tic-tac-toe-pygame
+cd tic-tac-toe
 ```
 
 3. Install dependencies:
