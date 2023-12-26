@@ -11,7 +11,7 @@ class Mouse(Sprite):
         self.pos = Vector2()
 
     def __str__(self) -> str:
-        return f"POSITION: {self.rect.center}"
+        return f"POSITION: {self.pos}"
 
     def update(self) -> None:
         self.rect.topleft = Vector2(self.pos)
