@@ -14,7 +14,6 @@ from src.modules.debugger import Debugger
 def main() -> None:
     args = parse_command_line_arguments()
     debug_mode = args.debug
-    debug_mode = True
 
     settings = Settings()
     screen = initialize_pygame(settings.WIDTH, settings.HEIGHT, settings.UI_FONT, settings.UI_FONT_SIZE)
@@ -41,7 +40,7 @@ def initialize_pygame(width: int, height: int, font: str, font_size: int) -> pg.
 
     pg.freetype.Font(font, font_size)
 
-    pg.event.set_grab(True)
+    pg.event.set_grab(False)
     pg.mouse.set_visible(False)
 
     return screen
