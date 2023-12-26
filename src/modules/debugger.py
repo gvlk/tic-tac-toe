@@ -14,5 +14,5 @@ class Debugger:
         for y, info in enumerate(infos):
             str_info = str(info)
             debug_surf = self.font.render(str_info, True, Color("White"), Color("Black"))
-            debug_rect = debug_surf.get_rect(topleft=(self.x, self.y + (y * 20)))
+            debug_rect = debug_surf.get_rect(topleft=(self.x, self.y + (y * 15)))
             self.display_surf.blit(debug_surf, debug_rect)
