@@ -36,7 +36,7 @@ def initialize_pygame(width: int, height: int, font_path: str, font_size: int) -
     freetype.init()
 
     pg.display.set_caption("Tic Tac Toe")
-    screen = pg.display.set_mode((width, height))
+    screen = pg.display.set_mode()
 
     font = pg.freetype.Font(font_path, font_size)
 
