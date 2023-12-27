@@ -1,6 +1,6 @@
 class Settings:
-    WIDTH = 700
-    HEIGHT = WIDTH
+    WIDTH = 1366  # not used
+    HEIGHT = 768
     FPS = 60
 
     UI_FONT = "src/assets/fonts/joystix.ttf"
